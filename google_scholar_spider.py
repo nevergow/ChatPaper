@@ -309,6 +309,7 @@ def plot_results(rank: List[int], citations: List[int], keyword: str) -> None:
     plt.show()
 
 
+
 def save_data_to_csv(data: pd.DataFrame, path: str, keyword: str) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
