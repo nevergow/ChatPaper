@@ -7,7 +7,7 @@ import warnings
 from dataclasses import dataclass
 from time import sleep
 from typing import List, Optional
-from scihub import SciHub
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
@@ -16,9 +16,6 @@ from tqdm import tqdm
 
 now = datetime.datetime.now()
 current_year = now.year
-time_tag = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-folder_Link = f'download/{time_tag}'
-
 MAX_CSV_FNAME = 255
 
 # Websession Parameters
@@ -41,7 +38,6 @@ class GoogleScholarConfig:
     start_year: Optional[int] = None
     end_year: int = current_year
     debug: bool = False
-    download: str= folder_Link
 
 
 def google_scholar_spider(GoogleScholarConfig: GoogleScholarConfig):
@@ -67,10 +63,6 @@ def google_scholar_spider(GoogleScholarConfig: GoogleScholarConfig):
     if GoogleScholarConfig.save_csv:
         save_data_to_csv(data_ranked, GoogleScholarConfig.csvpath, GoogleScholarConfig.keyword)
 
-    #Download paper from Scihub
-    if GoogleScholarConfig.download:
-        os.makedirs(folder_Link, exist_ok=True)
-        download_paper(data_ranked, folder_Link)
 
 def get_command_line_args() -> GoogleScholarConfig:
     parser = argparse.ArgumentParser(description='Arguments')
@@ -90,8 +82,6 @@ def get_command_line_args() -> GoogleScholarConfig:
     parser.add_argument('--endyear', type=int, help='End year when searching. Default is current year')
     parser.add_argument('--debug', action='store_true',
                         help='Debug mode. Used for unit testing. It will get pages stored on web archive')
-    parser.add_argument('--download', action='store_true', 
-                        help = 'Download papers from Scihub.')
 
     args, _ = parser.parse_known_args()
 
@@ -104,7 +94,6 @@ def get_command_line_args() -> GoogleScholarConfig:
         plot_results=args.plotresults,
         start_year=args.startyear if args.startyear else GoogleScholarConfig.start_year,
         end_year=args.endyear if args.endyear else GoogleScholarConfig.end_year,
-        download=args.download if args.download else GoogleScholarConfig.download,
         debug=args.debug
     )
 
@@ -316,23 +305,6 @@ def save_data_to_csv(data: pd.DataFrame, path: str, keyword: str) -> None:
     fpath_csv = fpath_csv[:MAX_CSV_FNAME]
     data.to_csv(fpath_csv, encoding='utf-8')
 
-def download_paper(data: pd.DataFrame, folderLink):
-    sh = SciHub()
-    source = data[['Title','Source']]
-    num = len(source)
-    for i in range(num):
-        paperInfo = source.iloc[i]
-        paperInfo = paperInfo.T
-        fileName = paperInfo['Title']
-        paperLink = paperInfo['Source']
-        fileLink = os.path.join(os.getcwd(),folderLink, fileName+'.pdf' )
-        print(f'''
-              {fileName}:
-              ''')
-        try:
-            result = sh.download(paperLink, path=fileLink)
-        except:
-            print('Can not find the paper on Scihub.')
 
 if __name__ == '__main__':
     print("Getting command line arguments...")
